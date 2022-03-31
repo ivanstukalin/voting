@@ -9,16 +9,19 @@ contract Voting {
         address vote;
     }
 
-    address private owner;
-    mapping (address => uint256) private votesReceived;
-    mapping (address => uint256) private moneyReceived;
-    address[] private candidateList;
-    mapping(address => Voter) private voters;
-    uint private creationDate;
     bool public votingStatus;
 
+    mapping (address => uint256) private votesReceived;
+    mapping (address => uint256) private moneyReceived;
+    mapping (address => Voter)   private voters;
+
+    address   private owner;
+    address[] private candidateList;
+    uint      private creationDate;
+
+
     constructor(address[] memory addressesOfCandidates) {
-        owner = msg.sender;
+        owner        = msg.sender;
         creationDate = 1648342101;//block.timestamp;
 
         for (uint256 i = 0; i < addressesOfCandidates.length; i++) {
@@ -30,6 +33,7 @@ contract Voting {
     function addCandidate(address addressOfCandidate) public {
         require(owner == msg.sender, "Has no right to add candidate"); 
         bool isNotExist = true;
+
         for (uint256 i = 0; i < candidateList.length; i++) {
             if (addressOfCandidate == candidateList[i]) {
                 isNotExist = false;
@@ -50,10 +54,13 @@ contract Voting {
     function vote(address addressOfCandidate) public payable {
         require(votingStatus, "The voting was completed");
         require(msg.value >= 10000000000000000, "Sum must be greater than 0,01 ETH");
+
         Voter storage voter = voters[msg.sender];
         require(!voter.voted, "Already voted.");
+
         voter.voted = true;
-        voter.vote = addressOfCandidate;
+        voter.vote  = addressOfCandidate;
+
         votesReceived[addressOfCandidate] += 1;
         moneyReceived[addressOfCandidate] += msg.value;
     }
@@ -64,18 +71,23 @@ contract Voting {
 
     function finishVoting() public returns (address winnerAddress_) {
         require(owner == msg.sender || getFinishDate() < block.timestamp, "Voting has not finished");
-        uint256 sum = 0;
-        winnerAddress_ = candidateList[getWinnerPosition()];
+        
+        uint256 sum         = 0;
+        winnerAddress_      = candidateList[getWinnerPosition()];
         address payable _to = payable(winnerAddress_);
-        sum = moneyReceived[winnerAddress_]/10*9;
+        sum                 = moneyReceived[winnerAddress_]/10*9;
+        
         _to.transfer(sum);
+
         votingStatus = false;
     }
 
     function withdrawCommision() public {
-        require(owner == msg.sender, "Has no right to withdraw commision"); 
-        address payable _to = payable(owner);
+        require(owner == msg.sender, "Has no right to withdraw commision");
+
+        address payable _to   = payable(owner);
         address _thisContract = address(this);  
+
         _to.transfer(_thisContract.balance);
     }
 
@@ -94,8 +106,8 @@ contract Voting {
             }
             if (voteCount > winningVoteCount) {
                 winningVoteCount = voteCount;
-                winnerPosition_ = p;
-                isSingleWinner = true;
+                winnerPosition_  = p;
+                isSingleWinner   = true;
             }
         }
         require(winningVoteCount != 0, "There are no one voted");
